@@ -1,0 +1,248 @@
+# Makefile for Wiki
+
+
+
+#================================================================
+# Setting Variables
+#================================================================
+
+
+# Generic settings
+SHELL = @SHELL@
+
+# Package information
+PACKAGE = @PACKAGE_NAME@
+VERSION = @PACKAGE_VERSION@
+PACKAGEDIR = $(PACKAGE)-$(VERSION)
+PACKAGETGZ = $(PACKAGE)-$(VERSION).tar.gz
+LIBVER = @MYLIBVER@
+LIBREV = @MYLIBREV@
+FORMATVER = @MYFORMATVER@
+
+# Targets
+HEADERFILES = @MYHEADERFILES@
+LIBRARYFILES = @MYLIBRARYFILES@
+LIBOBJFILES = @MYLIBOBJFILES@
+COMMANDFILES = @MYCOMMANDFILES@
+CGIFILES = @MYCGIFILES@
+MAN1FILES = @MYMAN1FILES@
+MAN3FILES = @MYMAN3FILES@
+DOCUMENTFILES = @MYDOCUMENTFILES@
+PCFILES = @MYPCFILES@
+
+# Install destinations
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+datarootdir = @datarootdir@
+INCLUDEDIR = @includedir@
+LIBDIR = @libdir@
+BINDIR = @bindir@
+LIBEXECDIR = @libexecdir@
+DATADIR = @datadir@/$(PACKAGE)
+MAN1DIR = @mandir@/man1
+MAN3DIR = @mandir@/man3
+PCDIR = @libdir@/pkgconfig
+DESTDIR =
+
+# Building configuration
+CC = @CC@
+CPPFLAGS = @MYCPPFLAGS@ \
+  -D_WIKI_PREFIX="\"$(prefix)\"" -D_WIKI_INCLUDEDIR="\"$(INCLUDEDIR)\"" \
+  -D_WIKI_LIBDIR="\"$(LIBDIR)\"" -D_WIKI_BINDIR="\"$(BINDIR)\"" -D_WIKI_LIBEXECDIR="\"$(LIBEXECDIR)\"" \
+  -D_WIKI_APPINC="\"-I$(INCLUDEDIR)\"" -D_WIKI_APPLIBS="\"-L$(LIBDIR) -lwikiparser @LIBS@\""
+CFLAGS = @MYCFLAGS@
+LDFLAGS = @MYLDFLAGS@
+CMDLDFLAGS = @MYCMDLDFLAGS@
+LIBS = @LIBS@
+LDENV = LD_RUN_PATH=/lib:/usr/lib:$(LIBDIR):$(HOME)/lib:/usr/local/lib:@MYRUNPATH@:.
+RUNENV = @MYLDLIBPATHENV@=.:/lib:/usr/lib:$(LIBDIR):$(HOME)/lib:/usr/local/lib:@MYRUNPATH@
+POSTCMD = @MYPOSTCMD@
+RAGEL = @MYRAGEL@
+RAGELFLAGS = @MYRAGELFLAGS@
+
+
+
+#================================================================
+# Suffix rules
+#================================================================
+
+
+%.o: %.c
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) -o $@ $<
+
+%.c: %.rl
+	$(RAGEL) $(RAGELFLAGS) -o $@ $<
+
+
+#================================================================
+# Actions
+#================================================================
+
+
+all : $(LIBRARYFILES) $(COMMANDFILES) $(CGIFILES)
+	@$(POSTCMD)
+	@printf '\n'
+	@printf '#================================================================\n'
+	@printf '# Ready to install.\n'
+	@printf '#================================================================\n'
+
+
+clean :
+	rm -rf $(LIBRARYFILES) $(LIBOBJFILES) $(COMMANDFILES) $(CGIFILES) \
+	  *.o a.out wikiparser.c wikiparser_all.c
+
+
+version :
+	vernum=`expr $(LIBVER)00 + $(LIBREV)` ; \
+	  sed -e 's/_WIKI_VERSION.*/_WIKI_VERSION    "$(VERSION)"/' \
+	    -e "s/_WIKI_LIBVER.*/_WIKI_LIBVER     $$vernum/" \
+	    -e 's/_WIKI_FORMATVER.*/_WIKI_FORMATVER  "$(FORMATVER)"/' wikiparser.h > wikiparser.h~
+	[ -f wikiparser.h~ ] && mv -f wikiparser.h~ wikiparser.h
+
+
+untabify :
+	ls *.c *.h *.idl | while read name ; \
+	  do \
+	    sed -e 's/\t/        /g' -e 's/ *$$//' $$name > $$name~; \
+	    [ -f $$name~ ] && mv -f $$name~ $$name ; \
+	  done
+
+
+install :
+	mkdir -p $(DESTDIR)$(INCLUDEDIR)
+	cp -Rf $(HEADERFILES) $(DESTDIR)$(INCLUDEDIR)
+	mkdir -p $(DESTDIR)$(LIBDIR)
+	cp -Rf $(LIBRARYFILES) $(DESTDIR)$(LIBDIR)
+	mkdir -p $(DESTDIR)$(BINDIR)
+	cp -Rf $(COMMANDFILES) $(DESTDIR)$(BINDIR)
+#	mkdir -p $(DESTDIR)$(LIBEXECDIR)
+#	cp -Rf $(CGIFILES) $(DESTDIR)$(LIBEXECDIR)
+#	mkdir -p $(DESTDIR)$(DATADIR)
+#	cp -Rf $(DOCUMENTFILES) $(DESTDIR)$(DATADIR)
+#	mkdir -p $(DESTDIR)$(MAN1DIR)
+#	cd man && cp -Rf $(MAN1FILES) $(DESTDIR)$(MAN1DIR)
+#	mkdir -p $(DESTDIR)$(MAN3DIR)
+#	cd man && cp -Rf $(MAN3FILES) $(DESTDIR)$(MAN3DIR)
+#	mkdir -p $(DESTDIR)$(PCDIR)
+#	cp -Rf $(PCFILES) $(DESTDIR)$(PCDIR)
+	-[ "$$UID" = 0 ] && PATH=/sbin:/usr/sbin:$(PATH) ldconfig 2>/dev/null || true
+	@printf '\n'
+	@printf '#================================================================\n'
+	@printf '# Thanks for using Wiki.\n'
+	@printf '#================================================================\n'
+
+
+install-strip :
+	make DESTDIR=$(DESTDIR) install
+	cd $(DESTDIR)$(BINDIR) && strip $(COMMANDFILES)
+
+
+uninstall :
+	cd $(DESTDIR)$(INCLUDEDIR) && rm -f $(HEADERFILES)
+	cd $(DESTDIR)$(LIBDIR) && rm -f $(LIBRARYFILES)
+	cd $(DESTDIR)$(BINDIR) && rm -f $(COMMANDFILES)
+	cd $(DESTDIR)$(LIBEXECDIR) && rm -f $(CGIFILES)
+	cd $(DESTDIR)$(MAN1DIR) && rm -f $(MAN1FILES)
+	cd $(DESTDIR)$(MAN3DIR) && rm -f $(MAN3FILES)
+	rm -rf $(DESTDIR)$(DATADIR)
+	cd $(DESTDIR)$(PCDIR) && rm -f $(PCFILES)
+	[ "$$UID" = 0 ] && PATH=/sbin:/usr/sbin:$(PATH) ldconfig 2>/dev/null || true
+
+
+dist :
+	make version
+#	make untabify
+	make distclean
+	cd .. && tar cvf - $(PACKAGEDIR) | gzip -c > $(PACKAGETGZ)
+	sync ; sync
+
+
+distclean : clean
+#	cd example && make clean
+#	cd bros && make clean
+	rm -rf Makefile wikiparser.pc config.cache config.h config.log config.status configure.scan \
+		autom4te.cache autoscan.log creole.html nyctergatis.html readme.html wiki.html
+
+
+check :
+	make check-html
+	@printf '\n'
+	@printf '#================================================================\n'
+	@printf '# Checking complete.\n'
+	@printf '#================================================================\n'
+
+
+check-html :
+	$(RUNENV) $(RUNCMD) ./wiki2html -ab 4096 < creole.txt > creole.html
+
+
+check-valgrind :
+	make RUNCMD="valgrind --tool=memcheck --log-file=%p.vlog" check
+	grep ERROR *.vlog | grep -v ' 0 errors' ; true
+	grep 'at exit' *.vlog | grep -v ' 0 bytes' ; true
+
+
+.PHONY : all clean install check
+
+
+
+#================================================================
+# Building binaries
+#================================================================
+
+
+libwikiparser.a : $(LIBOBJFILES)
+	$(AR) $(ARFLAGS) $@ $(LIBOBJFILES)
+
+
+libwikiparser.so.$(LIBVER).$(LIBREV).0 : $(LIBOBJFILES)
+	if uname -a | egrep -i 'SunOS' > /dev/null ; \
+	  then \
+	    $(CC) $(CFLAGS) -shared -Wl,-G,-h,libwikiparser.so.$(LIBVER) -o $@ \
+	      $(LIBOBJFILES) $(LDFLAGS) $(LIBS) ; \
+	  else \
+	    $(CC) $(CFLAGS) -shared -Wl,-soname,libwikiparser.so.$(LIBVER) -o $@ \
+	      $(LIBOBJFILES) $(LDFLAGS) $(LIBS) ; \
+	  fi
+
+
+libwikiparser.so.$(LIBVER) : libwikiparser.so.$(LIBVER).$(LIBREV).0
+	ln -f -s libwikiparser.so.$(LIBVER).$(LIBREV).0 $@
+
+
+libwikiparser.so : libwikiparser.so.$(LIBVER).$(LIBREV).0
+	ln -f -s libwikiparser.so.$(LIBVER).$(LIBREV).0 $@
+
+
+libwikiparser.$(LIBVER).$(LIBREV).0.dylib : $(LIBOBJFILES)
+	$(CC) $(CFLAGS) -dynamiclib -o $@ \
+	  -install_name $(LIBDIR)/libwikiparser.$(LIBVER).dylib \
+	  -current_version $(LIBVER).$(LIBREV).0 -compatibility_version $(LIBVER) \
+	  $(LIBOBJFILES) $(LDFLAGS) $(LIBS)
+
+
+libwikiparser.$(LIBVER).dylib : libwikiparser.$(LIBVER).$(LIBREV).0.dylib
+	ln -f -s libwikiparser.$(LIBVER).$(LIBREV).0.dylib $@
+
+
+libwikiparser.dylib : libwikiparser.$(LIBVER).$(LIBREV).0.dylib
+	ln -f -s libwikiparser.$(LIBVER).$(LIBREV).0.dylib $@
+
+
+wiki2html : wiki2html.o $(LIBRARYFILES)
+	$(LDENV) $(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) $(CMDLDFLAGS) -lwikiparser $(LIBS)
+
+
+wikiparser.o : config.h wikiparser.h
+
+wiki2html.o : config.h wikiparser.h
+
+
+
+wikiparser_all.c : wikiparser.c > $@
+
+wikiparser_all.o : config.h wikiparser.h
+
+
+
+# END OF FILE

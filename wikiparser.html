@@ -1,0 +1,711 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<style type="text/css">
+.underline { text-decoration: underline; }
+/*body { font-family: helvetica, sans-serif; font-size: 12pt; color: #000; }*/
+/*table, td, th { border: 1px solid green; padding: 1px; }*/
+/*th { background-color: green; color: white; }*/
+body
+{
+font-size:14px;
+color:#000000;
+background-color:#ffffff;
+/*margin:0px;*/
+overflow:auto;
+/*background-image:url('/images/gradientfromtop.gif');*/
+/*background-repeat:repeat-x;*/
+}
+
+body,p,h1,h2,h3,h4,table,td,th,ul,ol,textarea,input
+{
+font-family:verdana,helvetica,arial,sans-serif;
+}
+
+h1 {font-size:200%;margin-top:0px;font-weight:normal}
+h2 {font-size:160%;margin-top:10px;margin-bottom:10px;font-weight:normal}
+h3 {font-size:120%;font-weight:normal}
+h4 {font-size:100%;}
+h5 {font-size:90%;}
+h6 {font-size:80%;}
+
+h1,h2,h3,h4,h5,h6
+{
+background-color:transparent;
+color:#000000;
+}
+
+iframe {margin:0px;}
+div {width:100%;}
+
+table,th,td,input,textarea
+{
+font-size:100%;
+}
+</style>
+
+<style type="text/css">
+div#document table
+{
+font-family:"Trebuchet MS", Arial, Helvetica, sans-serif;
+/*width:100%;*/
+border-collapse:collapse;
+}
+div#document table td, div#document table th 
+{
+font-size:1.1em;
+/*border:1px solid #98bf21;*/
+border:1px solid #444;
+padding:3px 7px 2px 7px;
+}
+div#document table th 
+{
+font-size:1.2em;
+text-align:left;
+padding-top:5px;
+padding-bottom:4px;
+/*background-color:#A7C942;*/
+background-color:#aaa;
+color:#fff;
+}
+div#document table tr.alt td 
+{
+color:#000;
+/*background-color:#EAF2D3;*/
+background-color:#eee;
+}
+</style>
+</head>
+<body>
+
+<!-- title -->
+<h1>Wiki Parser</h1>
+<p>
+Wiki Parser Version 0.0.7<br />
+Mark Wharton, 07 December 2013<br />
+</p>
+<!-- table of content -->
+<table>
+<tbody>
+<tr><td><a href="#1">1. Introduction</a></td><td><!--<i>TOPIC</i>--></td></tr>
+	<tr><td><a href="#2">2. Wiki Parser API</a></td><td><!--<i>SPEC</i>--></td></tr>
+			<tr><td><a href="#2.1">2.1 createWikiParser</a></td><td><!--<i>WikiParser WIKIPARSERAPI createWikiParser(WikiParserConfig *config)</i>--></td></tr>
+			<tr><td><a href="#2.2">2.2 createWikiParserBuffer</a></td><td><!--<i>WikiParserBuffer WIKIPARSERAPI *createWikiParserBuffer(size_t size)</i>--></td></tr>
+			<tr><td><a href="#2.3">2.3 createWikiParserString</a></td><td><!--<i>char WIKIPARSERAPI *createWikiParserString(const char *data, size_t size)</i>--></td></tr>
+			<tr><td><a href="#2.4">2.4 wikiParserBufferFree</a></td><td><!--<i>void WIKIPARSERAPI wikiParserBufferFree(WikiParserBuffer *buffer)</i>--></td></tr>
+			<tr><td><a href="#2.5">2.5 wikiParserConfigureOptions</a></td><td><!--<i>void WIKIPARSERAPI wikiParserConfigureOptions(WikiParser parser, bool additions, bool blogstyle, bool monospace)</i>--></td></tr>
+			<tr><td><a href="#2.6">2.6 wikiParserConfigureWriters</a></td><td><!--<i>void WIKIPARSERAPI wikiParserConfigureWriters(WikiParser parser, WriteTextFunc writeText, WriteTokenFunc writeToken)</i>--></td></tr>
+			<tr><td><a href="#2.7">2.7 wikiParserFree</a></td><td><!--<i>void WIKIPARSERAPI wikiParserFree(WikiParser parser)</i>--></td></tr>
+			<tr><td><a href="#2.8">2.8 wikiParserGetCurrentLine</a></td><td><!--<i>int WIKIPARSERAPI wikiParserGetCurrentLine(WikiParser parser)</i>--></td></tr>
+			<tr><td><a href="#2.9">2.9 wikiParserGetErrorCode</a></td><td><!--<i>enum WIKI_PARSER_ERROR WIKIPARSERAPI wikiParserGetErrorCode(WikiParser parser)</i>--></td></tr>
+			<tr><td><a href="#2.10">2.10 wikiParserGetErrorString</a></td><td><!--<i>const char WIKIPARSERAPI *wikiParserGetErrorString(WikiParser parser)</i>--></td></tr>
+			<tr><td><a href="#2.11">2.11 wikiParserGetUserData</a></td><td><!--<i>void WIKIPARSERAPI *wikiParserGetUserData(WikiParser parser)</i>--></td></tr>
+			<tr><td><a href="#2.12">2.12 wikiParserParseStream</a></td><td><!--<i>bool WIKIPARSERAPI wikiParserParseStream(WikiParser parser, WikiParserBuffer *buffer, ReaderFunc reader, int blockMode)</i>--></td></tr>
+			<tr><td><a href="#2.13">2.13 wikiParserParseString</a></td><td><!--<i>bool WIKIPARSERAPI wikiParserParseString(WikiParser parser, char *string, int blockMode)</i>--></td></tr>
+			<tr><td><a href="#2.14">2.14 wikiParserSetUserData</a></td><td><!--<i>void WIKIPARSERAPI *wikiParserSetUserData(WikiParser parser, void *userData)</i>--></td></tr>
+			<tr><td><a href="#2.15">2.15 wikiParserStandardInputReader</a></td><td><!--<i>bool wikiParserStandardInputReader(void *userData, WikiParserBuffer *buffer, size_t *size)</i>--></td></tr>
+			<tr><td><a href="#2.16">2.16 wikiParserStringAppend</a></td><td><!--<i>char WIKIPARSERAPI *wikiParserStringAppend(char *string, const char *data, size_t size)</i>--></td></tr>
+			<tr><td><a href="#2.17">2.17 wikiParserStringFree</a></td><td><!--<i>void WIKIPARSERAPI wikiParserStringFree(char *string)</i>--></td></tr>
+	<tr><td><a href="#3">3. Release Notes</a></td><td><!--<i>TOPIC</i>--></td></tr>
+	</tbody>
+</table>
+<!-- body of text -->
+<div id="document">
+	<!--hr /-->
+	<h2 id="1"><span id="Introduction">1. Introduction</span></h2>
+	
+		
+			
+				<p><strong>Features</strong></p><p>
+Supports <a href="http://www.wikicreole.org/wiki/Creole1.0">Creole 1.0</a> with the following limitations:</p><ul><li>Closing braces cannot be included in preformatted blocks</li><li>More restrictive use of whitespace</li><li>No free standing links</li><li>No image escape character</li><li>No image inside links</li><li>No link escape character</li><li>Space follows list start * and #</li><li>Unix line breaks (LF) no Windows (CRLF)</li></ul><p>
+<strong>Dependencies</strong></p><ul><li><a href="http://www.complang.org/ragel/">ragel</a> for building wikiparser library</li></ul><p>
+<strong>Installation</strong></p><p>
+Run the configuration script.</p><pre>  ./configure</pre><p>
+Build the library and programs.</p><pre>  make</pre><p>
+Install the library and programs.</p><pre>  sudo make install</pre><p>
+<strong>Using the Wiki Application</strong></p><pre>  Usage: wiki2html [-a] [-b bufferSize] [-m] &lt; input.text &gt; output.html
+
+  -a enable additional features specified in the Creole 1.0 Additions
+  -m flag monospace in the WIKI_PARSER_TOKEN_TYPE_WIKINOWIKI token</pre><p>
+<strong>Using the Wiki Library</strong></p><pre>  gcc -I/usr/local/include wikiapp.c -o wikiapp -L/usr/local/lib -lwikiparser</pre><p>
+<strong>Sample Wiki Application</strong></p><pre>#include &quot;wikiparser.h&quot;
+
+bool wikiTextWriter(void *userData, WikiParserBuffer *text)
+{
+  return fwrite(text-&gt;data, text-&gt;size, 1, stdout) &gt;= 0;
+}
+
+bool wikiTokenWriter(void *userData, WikiParserToken *token)
+{
+  bool error = false;
+  if (token-&gt;text)
+    error = fwrite(token-&gt;text-&gt;data, token-&gt;text-&gt;size, 1, stdout) &lt; 0;
+  return !error;
+}
+
+int main(int argc, char **argv)
+{
+  WikiParser parser = createWikiParser(NULL);
+  if (parser) {
+    wikiParserConfigureWriters(parser, wikiTextWriter, wikiTokenWriter);
+    WikiParserBuffer *buffer = createWikiParserBuffer(WIKI_PARSER_BUFFER_SIZE);
+    if (buffer) {
+      if (!wikiParserParseStream(parser, buffer, NULL, 0)) {
+        fprintf(stderr, &quot;Error: parser error: %d %s (line %d)\n&quot;, 
+          wikiParserGetErrorCode(parser), wikiParserGetErrorString(parser), 
+          wikiParserGetCurrentLine(parser));
+        return 1;
+      }
+      wikiParserBufferFree(buffer);
+      buffer = NULL;
+    } else {
+      fprintf(stderr, &quot;Error: could not allocate buffer: %lld\n&quot;, (long long)buffer-&gt;size);
+      return 1;
+    }
+    wikiParserFree(parser);
+    parser = NULL;
+  } else {
+    fprintf(stderr, &quot;Error: could not create parser\n&quot;);
+    return 1;
+  }
+  return 0;
+}</pre><p>
+<strong>Tokens</strong></p><p>
+The following tokens are defined:</p><table><tr><th> Token Types                               </th><th> Field            </th></tr><tr><td> <code>WIKI_PARSER_TOKEN_TYPE_NONE [1]</code>        </td><td>                   </td></tr><tr class="alt"><td> <code>WIKI_PARSER_TOKEN_TYPE_BOLD</code>            </td><td> <code>state</code>         </td></tr><tr><td> <code>WIKI_PARSER_TOKEN_TYPE_CODE</code>            </td><td> <code>state</code>         </td></tr><tr class="alt"><td> <code>WIKI_PARSER_TOKEN_TYPE_DEFINITIONDESC</code>  </td><td>                   </td></tr><tr><td> <code>WIKI_PARSER_TOKEN_TYPE_DEFINITIONLIST</code>  </td><td>                   </td></tr><tr class="alt"><td> <code>WIKI_PARSER_TOKEN_TYPE_DEFINITIONTERM</code>  </td><td>                   </td></tr><tr><td> <code>WIKI_PARSER_TOKEN_TYPE_HEADING0 [2]</code>    </td><td>                   </td></tr><tr class="alt"><td> <code>WIKI_PARSER_TOKEN_TYPE_HEADING1</code>        </td><td> <code>text</code>          </td></tr><tr><td> <code>WIKI_PARSER_TOKEN_TYPE_HEADING2</code>        </td><td> <code>text</code>          </td></tr><tr class="alt"><td> <code>WIKI_PARSER_TOKEN_TYPE_HEADING3</code>        </td><td> <code>text</code>          </td></tr><tr><td> <code>WIKI_PARSER_TOKEN_TYPE_HEADING4</code>        </td><td> <code>text</code>          </td></tr><tr class="alt"><td> <code>WIKI_PARSER_TOKEN_TYPE_HEADING5</code>        </td><td> <code>text</code>          </td></tr><tr><td> <code>WIKI_PARSER_TOKEN_TYPE_HEADING6</code>        </td><td> <code>text</code>          </td></tr><tr class="alt"><td> <code>WIKI_PARSER_TOKEN_TYPE_HORIZONTALRULE</code>  </td><td>                   </td></tr><tr><td> <code>WIKI_PARSER_TOKEN_TYPE_IMAGE [3]</code>       </td><td> <code>source [text]</code> </td></tr><tr class="alt"><td> <code>WIKI_PARSER_TOKEN_TYPE_ITALIC</code>          </td><td> <code>state</code>         </td></tr><tr><td> <code>WIKI_PARSER_TOKEN_TYPE_KEYBOARD</code>        </td><td> <code>state</code>         </td></tr><tr class="alt"><td> <code>WIKI_PARSER_TOKEN_TYPE_LINEBREAK</code>       </td><td>                   </td></tr><tr><td> <code>WIKI_PARSER_TOKEN_TYPE_LINK [3]</code>        </td><td> <code>target [text]</code> </td></tr><tr class="alt"><td> <code>WIKI_PARSER_TOKEN_TYPE_LISTITEM</code>        </td><td>                   </td></tr><tr><td> <code>WIKI_PARSER_TOKEN_TYPE_ORDEREDLIST</code>     </td><td>                   </td></tr><tr class="alt"><td> <code>WIKI_PARSER_TOKEN_TYPE_PARAGRAPH</code>       </td><td>                   </td></tr><tr><td> <code>WIKI_PARSER_TOKEN_TYPE_PREFORMATTED</code>    </td><td> <code>text</code>          </td></tr><tr class="alt"><td> <code>WIKI_PARSER_TOKEN_TYPE_SAMPLECODE</code>      </td><td> <code>state</code>         </td></tr><tr><td> <code>WIKI_PARSER_TOKEN_TYPE_SUBSCRIPT</code>       </td><td> <code>state</code>         </td></tr><tr class="alt"><td> <code>WIKI_PARSER_TOKEN_TYPE_SUPERSCRIPT</code>     </td><td> <code>state</code>         </td></tr><tr><td> <code>WIKI_PARSER_TOKEN_TYPE_TABLE</code>           </td><td>                   </td></tr><tr class="alt"><td> <code>WIKI_PARSER_TOKEN_TYPE_TABLEDATA</code>       </td><td>                   </td></tr><tr><td> <code>WIKI_PARSER_TOKEN_TYPE_TABLEHEADER</code>     </td><td>                   </td></tr><tr class="alt"><td> <code>WIKI_PARSER_TOKEN_TYPE_TABLEROW</code>        </td><td>                   </td></tr><tr><td> <code>WIKI_PARSER_TOKEN_TYPE_TEXT [4]</code>        </td><td> <code>text</code>          </td></tr><tr class="alt"><td> <code>WIKI_PARSER_TOKEN_TYPE_UNDERLINE</code>       </td><td> <code>state</code>         </td></tr><tr><td> <code>WIKI_PARSER_TOKEN_TYPE_UNORDEREDLIST</code>   </td><td>                   </td></tr><tr class="alt"><td> <code>WIKI_PARSER_TOKEN_TYPE_VARIABLE</code>        </td><td> <code>state</code>         </td></tr><tr><td> <code>WIKI_PARSER_TOKEN_TYPE_WIKINOWIKI [5]</code>  </td><td> <code>state text</code>    </td></tr><tr class="alt"><td> <code>WIKI_PARSER_TOKEN_TYPE_WIKIPLACEHOLDER</code> </td><td> <code>text</code>          </td></tr><tr><td> <code>WIKI_PARSER_TOKEN_TYPE_WIKIPLUGIN</code>      </td><td> <code>text</code>          </td></tr></table><p>
+<strong>Special Notes:</strong></p><ol><li>Sent at the end of the token stream.</li><li>For calculating header offsets, not used directly.</li><li>The <code>text</code> value is <code>NULL</code> when image or link does not include pipe.</li><li>When no text writer is configured (see <code><a href="#wikiParserConfigureWriters">wikiParserConfigureWriters</a></code>).</li><li>The <code>monospace</code> configuration option is passed in the <code>state</code> field for convenience.
+</li></ol>
+			
+		
+		
+		
+		
+	
+	
+	<!--hr /-->
+	<h2 id="2"><span id="Wiki Parser API">2. Wiki Parser API</span></h2>
+	
+	
+
+<p>The <strong>Wiki Parser API</strong> library provides the following functions:</p>
+<ul>
+<li><code>createWikiParser</code></li>
+<li><code>createWikiParserBuffer</code></li>
+<li><code>createWikiParserString</code></li>
+<li><code>wikiParserBufferFree</code></li>
+<li><code>wikiParserConfigureOptions</code></li>
+<li><code>wikiParserConfigureWriters</code></li>
+<li><code>wikiParserFree</code></li>
+<li><code>wikiParserGetCurrentLine</code></li>
+<li><code>wikiParserGetErrorCode</code></li>
+<li><code>wikiParserGetErrorString</code></li>
+<li><code>wikiParserGetUserData</code></li>
+<li><code>wikiParserParseStream</code></li>
+<li><code>wikiParserParseString</code></li>
+<li><code>wikiParserSetUserData</code></li>
+<li><code>wikiParserStandardInputReader</code></li>
+<li><code>wikiParserStringAppend</code></li>
+<li><code>wikiParserStringFree</code></li>
+</ul>
+<hr />
+			<h3 id="2.1"><span id="createWikiParser">createWikiParser</span></h3>
+		<p><code>WikiParser WIKIPARSERAPI createWikiParser(WikiParserConfig *config)</<code></p>
+		<p><strong>Description</strong></p>
+		<p>Create a new <code>parser</code> object. The parser must be freed with <code><a href="#wikiParserFree">wikiParserFree</a></code> when no longer needed.
+</p>
+		<p><strong>Parameters</strong></p>
+		<ul>
+		<li><code><strong>config</strong> : WikiParserConfig *</code><br />
+			(optional) The config object. If the value is NULL the standard <code>emptyWikiParserConfig</code> config is used. 
+With <code>emptyWikiParserConfig</code> all options are set to <code>false</code> and the writers set to <code>NULL</code>.
+</li>
+				</ul>
+		<p><strong>Return Value</strong></p>
+		<ul>
+		
+		<li><code><strong>parser</strong> : WikiParser</code><br />
+			
+			The new parser object. Note: The value will be <code>NULL</code> if memory could not be allocated.
+</li>
+				
+		</ul>
+		<hr />
+				<h3 id="2.2"><span id="createWikiParserBuffer">createWikiParserBuffer</span></h3>
+		<p><code>WikiParserBuffer WIKIPARSERAPI *createWikiParserBuffer(size_t size)</<code></p>
+		<p><strong>Description</strong></p>
+		<p>Create a new <code>buffer</code> object. The buffer must be freed with <code><a href="#wikiParserBufferFree">wikiParserBufferFree</a></code> when no longer needed.
+</p>
+		<p><strong>Parameters</strong></p>
+		<ul>
+		<li><code><strong>size</strong> : size_t</code><br />
+			The buffer size.
+</li>
+				</ul>
+		<p><strong>Return Value</strong></p>
+		<ul>
+		
+		<li><code><strong>buffer</strong> : WikiParserBuffer *</code><br />
+			
+			The new buffer object. Note: The value will be <code>NULL</code> if memory could not be allocated.
+</li>
+				
+		</ul>
+		<hr />
+				<h3 id="2.3"><span id="createWikiParserString">createWikiParserString</span></h3>
+		<p><code>char WIKIPARSERAPI *createWikiParserString(const char *data, size_t size)</<code></p>
+		<p><strong>Description</strong></p>
+		<p>Create a new <code>string</code> object with text. The string must be freed with <code><a href="#wikiParserStringFree">wikiParserStringFree</a></code> when no longer needed.
+</p>
+		<p><strong>Parameters</strong></p>
+		<ul>
+		<li><code><strong>data</strong> : const char *</code><br />
+			The text buffer data.
+</li>
+		<li><code><strong>size</strong> : size_t</code><br />
+			The text buffer size.
+</li>
+				</ul>
+		<p><strong>Return Value</strong></p>
+		<ul>
+		
+		<li><code><strong>string</strong> : char *</code><br />
+			
+			The new string object. Note: The value will be <code>NULL</code> if memory could not be allocated.
+</li>
+				
+		</ul>
+		<hr />
+				<h3 id="2.4"><span id="wikiParserBufferFree">wikiParserBufferFree</span></h3>
+		<p><code>void WIKIPARSERAPI wikiParserBufferFree(WikiParserBuffer *buffer)</<code></p>
+		<p><strong>Description</strong></p>
+		<p>Free the memory allocated to <code>buffer</code>. The buffer must be a valid buffer created with an earlier 
+call to <a href="#createWikiParserBuffer">createWikiParserBuffer</a>. The buffer value must not be used after it is freed. It 
+is good practice to set the buffer value to <code>NULL</code> after calling this function.
+</p>
+		<p><strong>Parameters</strong></p>
+		<ul>
+		<li><code><strong>buffer</strong> : WikiParserBuffer *</code><br />
+			The buffer to be freed.
+</li>
+				</ul>
+		<p><strong>Return Value</strong></p>
+		<ul>
+		
+		<li><code><strong>none</strong> : void</code><br />
+			
+			</li>
+				
+		</ul>
+		<hr />
+				<h3 id="2.5"><span id="wikiParserConfigureOptions">wikiParserConfigureOptions</span></h3>
+		<p><code>void WIKIPARSERAPI wikiParserConfigureOptions(WikiParser parser, bool additions, bool blogstyle, bool monospace)</<code></p>
+		<p><strong>Description</strong></p>
+		<p>Configure the options for the parser. These options are applied to a copy of the original config object (if any)
+which was passed in the call to <a href="#createWikiParser">createWikiParser</a>. The original config object remains unchanged.
+</p>
+		<p><strong>Parameters</strong></p>
+		<ul>
+		<li><code><strong>parser</strong> : WikiParser</code><br />
+			The parser object.
+</li>
+		<li><code><strong>additions</strong> : bool</code><br />
+			<code>true</code> to enable additional features specified in the <a href="http://www.wikicreole.org/wiki/CreoleAdditions">Creole 1.0 Additions</a>, including:<ul><li>Code (Monospace)</li><li>Definition lists</li><li>Plug-in/Extension</li><li>Subscript</li><li>Superscript</li><li>Underline</li></ul>
+and experimental features, including:<ul><li>(<code><code>#$...$#</code></code>) Keyboard</li><li>(<code><code>$#...#$</code></code>) Samplecode</li><li>(<code><code>$$...$$</code></code>) Variable
+</li></ul></li>
+		<li><code><strong>blogstyle</strong> : bool</code><br />
+			<code>true</code> to enable blog-style line breaks instead of wiki-style line breaks (the default). See 
+<a href="http://www.wikicreole.org/wiki/ParagraphsAndLineBreaksReasoning">Creole 1.0 Paragraphs And Line Breaks Reasoning</a> 
+for details.
+</li>
+		<li><code><strong>monospace</strong> : bool</code><br />
+			<code>true</code> to enable monospace in the <code>WIKI_PARSER_TOKEN_TYPE_WIKINOWIKI</code> token. This option is passed to the token writer, the parser does not do anything special.
+See <a href="http://www.wikicreole.org/wiki/Creole1.0#section-Creole1.0-NowikiPreformatted">Creole 1.0 Nowiki Preformatted</a> for more information.
+</li>
+				</ul>
+		<p><strong>Return Value</strong></p>
+		<ul>
+		
+		<li><code><strong>none</strong> : void</code><br />
+			
+			</li>
+				
+		</ul>
+		<hr />
+				<h3 id="2.6"><span id="wikiParserConfigureWriters">wikiParserConfigureWriters</span></h3>
+		<p><code>void WIKIPARSERAPI wikiParserConfigureWriters(WikiParser parser, WriteTextFunc writeText, WriteTokenFunc writeToken)</<code></p>
+		<p><strong>Description</strong></p>
+		<p>Configure the text and token writer callbacks for the parser. These writer callbacks are applied to a copy of the original config 
+object (if any) which was passed in the call to <a href="#createWikiParser">createWikiParser</a>. The original config object remains unchanged.</p><p>
+The <code>WriteTextFunc</code> text and <code>WriteTokenFunc</code> token writer callbacks are declared as follows:</p><pre>typedef bool (*WriteTextFunc)(void *userData, WikiParserBuffer *text);
+
+bool wikiTextWriter(void *userData, WikiParserBuffer *text)
+{
+    bool error = false;
+    // process the text...
+    return !error;
+}
+
+typedef bool (*WriteTokenFunc)(void *userData, WikiParserToken *token);
+
+bool wikiTokenWriter(void *userData, WikiParserToken *token)
+{
+    bool error = false;
+    // process the token...
+    return !error;
+}</pre><p>
+Return <code>true</code> on success and <code>false</code> on failure. Record any specific error details in <code>userData</code> if they are needed.
+</p>
+		<p><strong>Parameters</strong></p>
+		<ul>
+		<li><code><strong>parser</strong> : WikiParser</code><br />
+			The parser object.
+</li>
+		<li><code><strong>writeText</strong> : WriteTextFunc</code><br />
+			(optional) The text writer callback. If the value is <code>NULL</code> text is sent to the 
+token writer in the <code>WIKI_PARSER_TOKEN_TYPE_TEXT</code> token.
+</li>
+		<li><code><strong>writeToken</strong> : WriteTokenFunc</code><br />
+			The token writer callback.
+</li>
+				</ul>
+		<p><strong>Return Value</strong></p>
+		<ul>
+		
+		<li><code><strong>none</strong> : void</code><br />
+			
+			</li>
+				
+		</ul>
+		<hr />
+				<h3 id="2.7"><span id="wikiParserFree">wikiParserFree</span></h3>
+		<p><code>void WIKIPARSERAPI wikiParserFree(WikiParser parser)</<code></p>
+		<p><strong>Description</strong></p>
+		<p>Free the memory allocated to <code>parser</code>. The parser must be a valid parser created with an earlier 
+call to <a href="#createWikiParser">createWikiParser</a>. The parser value must not be used after it is freed. It 
+is good practice to set the parser value to <code>NULL</code> after calling this function.
+</p>
+		<p><strong>Parameters</strong></p>
+		<ul>
+		<li><code><strong>parser</strong> : WikiParser</code><br />
+			The parser to be freed.
+</li>
+				</ul>
+		<p><strong>Return Value</strong></p>
+		<ul>
+		
+		<li><code><strong>none</strong> : void</code><br />
+			
+			</li>
+				
+		</ul>
+		<hr />
+				<h3 id="2.8"><span id="wikiParserGetCurrentLine">wikiParserGetCurrentLine</span></h3>
+		<p><code>int WIKIPARSERAPI wikiParserGetCurrentLine(WikiParser parser)</<code></p>
+		<p><strong>Description</strong></p>
+		<p>Return the current line of the parser. Line numbers start from <code>1</code> and continue to the end of the document. 
+Before the parser has started the value will be <code>0</code>, on completion the value will be the total number of 
+lines in the document. When an error occurs the value will be the line the error occurred on.
+</p>
+		<p><strong>Parameters</strong></p>
+		<ul>
+		<li><code><strong>parser</strong> : WikiParser</code><br />
+			The parser object.
+</li>
+				</ul>
+		<p><strong>Return Value</strong></p>
+		<ul>
+		
+		<li><code><strong>value</strong> : int</code><br />
+			
+			The current line.
+</li>
+				
+		</ul>
+		<hr />
+				<h3 id="2.9"><span id="wikiParserGetErrorCode">wikiParserGetErrorCode</span></h3>
+		<p><code>enum WIKI_PARSER_ERROR WIKIPARSERAPI wikiParserGetErrorCode(WikiParser parser)</<code></p>
+		<p><strong>Description</strong></p>
+		<p>Return the error code of the parser. The error code is set when an error occurs during parsing.
+Errors which occur during reading or writing are caught in the parser and returned as 
+<code>WIKI_PARSER_ERROR_READER</code> and <code>WIKI_PARSER_ERROR_WRITER</code> respectively. Readers and writers
+should record any specific error details in <code>userData</code> if they are needed. The <code>WIKI_PARSER_ERROR_PARSER</code>
+error indicates a syntax error, <code>WIKI_PARSER_ERROR_MEMORY</code> indicates an out of memory error, 
+<code>WIKI_PARSER_ERROR_BUFFER</code> indicates a token in the stream was too big for the user supplied buffer.
+See also <code><a href="#wikiParserGetErrorString">wikiParserGetErrorString</a>.</code></p><table><tr><th> Errors                       </th><th> Description                       </th></tr><tr><td> <code>JSON_PARSER_ERROR_UNKNOWN</code> </td><td> An unknown error occurred.         </td></tr><tr class="alt"><td> <code>JSON_PARSER_ERROR_NONE</code>    </td><td> No error.                          </td></tr><tr><td> <code>JSON_PARSER_ERROR_BUFFER</code>  </td><td> Token too big for buffer.          </td></tr><tr class="alt"><td> <code>JSON_PARSER_ERROR_MEMORY</code>  </td><td> An out of memory error occurred.   </td></tr><tr><td> <code>JSON_PARSER_ERROR_PARSER</code>  </td><td> Input could not be parsed.         </td></tr><tr class="alt"><td> <code>JSON_PARSER_ERROR_PSTACK</code>  </td><td> Parser stack overflow.             </td></tr><tr><td> <code>JSON_PARSER_ERROR_READER</code>  </td><td> An error occurred with the reader. </td></tr><tr class="alt"><td> <code>JSON_PARSER_ERROR_WRITER</code>  </td><td> An error occurred with the writer. </td></tr></table><p>
+The <code>WIKI_PARSER_ERROR_NONE</code> error is equal to <code>0</code>, <code>WIKI_PARSER_ERROR_UNKNOWN</code> is less than <code>0</code>, 
+all other errors are greater than <code>0</code>.
+</p>
+		<p><strong>Parameters</strong></p>
+		<ul>
+		<li><code><strong>parser</strong> : WikiParser</code><br />
+			The parser object.
+</li>
+				</ul>
+		<p><strong>Return Value</strong></p>
+		<ul>
+		
+		<li><code><strong>value</strong> : enum WIKI_PARSER_ERROR</code><br />
+			
+			The error code.
+</li>
+				
+		</ul>
+		<hr />
+				<h3 id="2.10"><span id="wikiParserGetErrorString">wikiParserGetErrorString</span></h3>
+		<p><code>const char WIKIPARSERAPI *wikiParserGetErrorString(WikiParser parser)</<code></p>
+		<p><strong>Description</strong></p>
+		<p>Return the error string associated with the error code of the parser. See <code><a href="#wikiParserGetErrorCode">wikiParserGetErrorCode</a> for details.
+</code></p>
+		<p><strong>Parameters</strong></p>
+		<ul>
+		<li><code><strong>parser</strong> : WikiParser</code><br />
+			The parser object.
+</li>
+				</ul>
+		<p><strong>Return Value</strong></p>
+		<ul>
+		
+		<li><code><strong>value</strong> : const char *</code><br />
+			
+			The error string.
+</li>
+				
+		</ul>
+		<hr />
+				<h3 id="2.11"><span id="wikiParserGetUserData">wikiParserGetUserData</span></h3>
+		<p><code>void WIKIPARSERAPI *wikiParserGetUserData(WikiParser parser)</<code></p>
+		<p><strong>Description</strong></p>
+		<p>Return user data associated with the parser in an earlier call to <code><a href="#wikiParserSetUserData">wikiParserSetUserData</a></code>. 
+The <code>void *userData</code> should be recast to use. Callback functions are provided the same <code>void *userData</code>. 
+Macros can make using the user data easier, for example:</p><pre>#define userDataRowCount (((Wiki2HTMLUserDataPtr)userData)-&gt;rowCount)</pre><p>
+</p>
+		<p><strong>Parameters</strong></p>
+		<ul>
+		<li><code><strong>parser</strong> : WikiParser</code><br />
+			The parser object.
+</li>
+				</ul>
+		<p><strong>Return Value</strong></p>
+		<ul>
+		
+		<li><code><strong>value</strong> : void *</code><br />
+			
+			The user data.
+</li>
+				
+		</ul>
+		<hr />
+				<h3 id="2.12"><span id="wikiParserParseStream">wikiParserParseStream</span></h3>
+		<p><code>bool WIKIPARSERAPI wikiParserParseStream(WikiParser parser, WikiParserBuffer *buffer, ReaderFunc reader, int blockMode)</<code></p>
+		<p><strong>Description</strong></p>
+		<p>Parse the reader input. Parsed text and tokens are streamed to the writers.</p><p>
+The <code>ReaderFunc</code> reader callback is declared as follows:</p><pre>typedef bool (*ReaderFunc)(void *userData, WikiParserBuffer *buffer, size_t *size);
+
+bool wikiParserStandardInputReader(void *userData, WikiParserBuffer *buffer, size_t *size) {
+    *size = fread((char *)buffer-&gt;data, 1, buffer-&gt;size, stdin);
+    return ferror(stdin) == 0;
+}</pre><p>
+Return <code>true</code> on success and <code>false</code> on failure. Record any specific error details in <code>userData</code> if they are needed.
+</p>
+		<p><strong>Parameters</strong></p>
+		<ul>
+		<li><code><strong>parser</strong> : WikiParser</code><br />
+			The parser object.
+</li>
+		<li><code><strong>buffer</strong> : WikiParserBufferPtr</code><br />
+			The buffer for the parser. Buffer management functions are performed automatically.
+</li>
+		<li><code><strong>reader</strong> : ReaderFunc</code><br />
+			(optional) The parser calls this functions whenever it needs to fill the buffer. If the value 
+is NULL the default <code><a href="#wikiParserStandardInputReader">wikiParserStandardInputReader</a></code> callback function is used.
+</li>
+		<li><code><strong>blockMode</strong> : int</code><br />
+			Set the parser block mode: <code>0</code> for normal, <code>1</code> for paragraph mode (does not emit paragraph tokens 
+when moving to inner paragraph mode). Paragraph mode is useful in cases where text is 
+parsed and included in an outer paragraph or other block elements like list etc.
+</li>
+				</ul>
+		<p><strong>Return Value</strong></p>
+		<ul>
+		
+		<li><code><strong>success</strong> : bool</code><br />
+			
+			Returns <code>true</code> on success and <code>false</code> on failure. Call the <code><a href="#wikiParserGetErrorCode">wikiParserGetErrorCode</a></code> 
+and <code><a href="#wikiParserGetErrorString">wikiParserGetErrorString</a></code> functions for information about the failure.
+Possible errors include: <code>WIKI_PARSER_ERROR_BUFFER</code>, <code>WIKI_PARSER_ERROR_PARSER</code>, 
+<code>WIKI_PARSER_ERROR_READER</code>, and <code>WIKI_PARSER_ERROR_WRITER</code>.
+</li>
+				
+		</ul>
+		<hr />
+				<h3 id="2.13"><span id="wikiParserParseString">wikiParserParseString</span></h3>
+		<p><code>bool WIKIPARSERAPI wikiParserParseString(WikiParser parser, char *string, int blockMode)</<code></p>
+		<p><strong>Description</strong></p>
+		<p>Parse the string. Parsed text and tokens are streamed to the writers.
+</p>
+		<p><strong>Parameters</strong></p>
+		<ul>
+		<li><code><strong>parser</strong> : WikiParser</code><br />
+			The parser object.
+</li>
+		<li><code><strong>string</strong> : char *</code><br />
+			The string to parse.
+</li>
+		<li><code><strong>blockMode</strong> : int</code><br />
+			Set the parser block mode: <code>0</code> for normal, <code>1</code> for paragraph mode (does not emit paragraph tokens 
+when moving to inner paragraph mode). Paragraph mode is useful in cases where text is 
+parsed and included in an outer paragraph or other block elements like list etc.
+</li>
+				</ul>
+		<p><strong>Return Value</strong></p>
+		<ul>
+		
+		<li><code><strong>success</strong> : bool</code><br />
+			
+			Returns <code>true</code> on success and <code>false</code> on failure. Call the <code><a href="#wikiParserGetErrorCode">wikiParserGetErrorCode</a></code> and 
+<code><a href="#wikiParserGetErrorString">wikiParserGetErrorString</a></code> functions for information about the failure.
+Possible errors include: <code>WIKI_PARSER_ERROR_PARSER</code>, and <code>WIKI_PARSER_ERROR_WRITER</code>.
+</li>
+				
+		</ul>
+		<hr />
+				<h3 id="2.14"><span id="wikiParserSetUserData">wikiParserSetUserData</span></h3>
+		<p><code>void WIKIPARSERAPI *wikiParserSetUserData(WikiParser parser, void *userData)</<code></p>
+		<p><strong>Description</strong></p>
+		<p>Associate user data with the parser for callback functions. See also <code><a href="#wikiParserGetUserData">wikiParserGetUserData</a></code>.
+</p>
+		<p><strong>Parameters</strong></p>
+		<ul>
+		<li><code><strong>parser</strong> : WikiParser</code><br />
+			The parser object.
+</li>
+		<li><code><strong>userData</strong> : void *</code><br />
+			The user data.
+</li>
+				</ul>
+		<p><strong>Return Value</strong></p>
+		<ul>
+		
+		<li><code><strong>none</strong> : void</code><br />
+			
+			</li>
+				
+		</ul>
+		<hr />
+				<h3 id="2.15"><span id="wikiParserStandardInputReader">wikiParserStandardInputReader</span></h3>
+		<p><code>bool wikiParserStandardInputReader(void *userData, WikiParserBuffer *buffer, size_t *size)</<code></p>
+		<p><strong>Description</strong></p>
+		<p>The default reader callback for filling the buffer with <code>stdin</code>. See also <code><a href="#wikiParserParseStream">wikiParserParseStream</a></code>.
+</p>
+		<p><strong>Parameters</strong></p>
+		<ul>
+		<li><code><strong>userData</strong> : void *</code><br />
+			The user data associated with the parser.
+</li>
+		<li><code><strong>buffer</strong> : WikiParserBuffer *</code><br />
+			The buffer to read into.
+</li>
+		<li><code><strong>size</strong> : size_t *</code><br />
+			Pointer for returning the amount of bytes read into the buffer.
+</li>
+				</ul>
+		<p><strong>Return Value</strong></p>
+		<ul>
+		
+		<li><code><strong>success</strong> : bool</code><br />
+			
+			Returns <code>true</code> on success and <code>false</code> on failure. No specific error details are recorded for <code>WIKI_PARSER_ERROR_READER</code>.
+</li>
+				
+		</ul>
+		<hr />
+				<h3 id="2.16"><span id="wikiParserStringAppend">wikiParserStringAppend</span></h3>
+		<p><code>char WIKIPARSERAPI *wikiParserStringAppend(char *string, const char *data, size_t size)</<code></p>
+		<p><strong>Description</strong></p>
+		<p>Append text to <code>string</code>. The string must be a valid string created with an earlier call to <a href="#createWikiParserString">createWikiParserString</a>.
+The string must be freed with <code><a href="#wikiParserStringFree">wikiParserStringFree</a></code> when no longer needed.
+</p>
+		<p><strong>Parameters</strong></p>
+		<ul>
+		<li><code><strong>string</strong> : char *</code><br />
+			(optional) The string object. If the value is NULL a new string will be created.
+</li>
+		<li><code><strong>data</strong> : const char *</code><br />
+			The text buffer data.
+</li>
+		<li><code><strong>size</strong> : size_t</code><br />
+			The text buffer size.
+</li>
+				</ul>
+		<p><strong>Return Value</strong></p>
+		<ul>
+		
+		<li><code><strong>string</strong> : char *</code><br />
+			
+			The (possibly) new string object. Note: The value will be <code>NULL</code> if memory could not be allocated.
+</li>
+				
+		</ul>
+		<hr />
+				<h3 id="2.17"><span id="wikiParserStringFree">wikiParserStringFree</span></h3>
+		<p><code>void WIKIPARSERAPI wikiParserStringFree(char *string)</<code></p>
+		<p><strong>Description</strong></p>
+		<p>Free the memory allocated to <code>string</code>. The string must be a valid string created with an earlier 
+call to <a href="#createWikiParserString">createWikiParserString</a>. The string value must not be used after it is freed. It 
+is good practice to set the string value to <code>NULL</code> after calling this function.
+</p>
+		<p><strong>Parameters</strong></p>
+		<ul>
+		<li><code><strong>string</strong> : char *</code><br />
+			The string to be freed.
+</li>
+				</ul>
+		<p><strong>Return Value</strong></p>
+		<ul>
+		
+		<li><code><strong>none</strong> : void</code><br />
+			
+			</li>
+				
+		</ul>
+		<hr />
+			
+	<!--hr /-->
+	<h2 id="3"><span id="Release Notes">3. Release Notes</span></h2>
+	
+		
+			
+				<p><!--include:release-notes-->
+</p>
+			
+		
+		
+		
+		
+							<strong>07 December 2013 - 0.0.7</strong>
+				<ul><li>Improved catch-all for longer text tokens.
+</li></ul>
+							<strong>28 November 2012 - 0.0.6</strong>
+				<ul><li>Fixed wiki plugin text size problem.
+</li></ul>
+							<strong>26 October 2010 - 0.0.5</strong>
+				<ul><li>Fixed mismatched error strings.</li><li>Fixed problem with wikiParserStringAppend.
+</li></ul>
+							<strong>23 October 2010 - 0.0.4</strong>
+				<ul><li>Added buffer management and macro support for markers (e.g. parserMark(pipe)).</li><li>Added experimental ragelstuff.h macros for handling ragel functions in a routine way.</li><li>Added wikiParserStandardInputReader callback function.</li><li>Fixed block mode test condition with table and definition list.</li><li>Moved release notes from source file to header file.</li><li>Removed the writer callback parameters.
+</li></ul>
+							<strong>19 October 2010 - 0.0.3</strong>
+				<ul><li>Added reader and writer callbacks for streaming in/out.</li><li>Added functions for setting various config options.
+</li></ul>
+							<strong>18 October 2010 - 0.0.2</strong>
+				<ul><li>Improved the basic structure.
+</li></ul>
+							<strong>15 October 2010 - 0.0.1</strong>
+				<ul><li>Initial release for style discussion.
+</li></ul>
+					
+	
+	
+
+</div>
+</body>
+</html>
