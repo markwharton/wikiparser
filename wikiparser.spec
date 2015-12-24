@@ -1,6 +1,6 @@
 Summary: WikiParser
 Name: wikiparser
-Version: 0.0.8
+Version: 0.0.9
 Release: 1%{?dist}
 License: BSD License
 Group: Development/Tools/Other
@@ -29,6 +29,8 @@ make -C $F_HOME/kinoma/simpleWebService/libraries/wiki DESTDIR=$RPM_BUILD_ROOT i
 %attr(0644,root,root) /usr/lib64/libwikiparser.so.1.1.0
 
 %changelog
+* Wed Dec 23 2015 Mark Wharton <mark@jynx.com> - 0.0.9-1
+- Add token value for open table header flag and paragraph counter
 * Thu May 29 2014 Mark Wharton <mark@jynx.com> - 0.0.8-1
 - Capture additional closing characters for inline nowiki, placeholder, and plugin
 * Sat Dec 07 2013 Mark Wharton <mark@jynx.com> - 0.0.7-1

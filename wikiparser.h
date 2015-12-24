@@ -146,13 +146,14 @@ WikiParserBuffer emptyWikiParserBuffer = {
 typedef struct WikiParserTokenStruct {
 	enum WIKI_PARSER_TOKEN_TYPE type;
 	bool state;
+	int value;
 	WikiParserBuffer *source;
 	WikiParserBuffer *target;
 	WikiParserBuffer *text;
 } WikiParserToken, *WikiParserTokenPtr;
 
 WikiParserToken emptyWikiParserToken = {
-	WIKI_PARSER_TOKEN_TYPE_NONE, false, NULL, NULL, NULL
+	WIKI_PARSER_TOKEN_TYPE_NONE, false, 0, NULL, NULL, NULL
 };
 
 typedef bool (*ReaderFunc)(void *userData, WikiParserBuffer *buffer, size_t *size);

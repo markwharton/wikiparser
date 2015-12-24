@@ -2,7 +2,7 @@
 
 C wiki parser library and sample application.
 
-Copyright (c) 2010, Mark Wharton
+Copyright (c) 2015, Mark Wharton
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -18,11 +18,11 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 //
 // Author:	Mark Wharton
 //
-// Date:	29 May 2014
+// Date:	23 December 2015
 //
 // Title:	Wiki Parser
 //
-// Version:	0.0.8
+// Version:	0.0.9
 //
 // Topic:	Introduction
 //			**Features**
@@ -186,6 +186,7 @@ typedef struct WikiParserParserStruct {
 	int blockMode;
 	int blockModeParam;
 	int currentLine;
+	int paragraphCount;
 	enum WIKI_PARSER_ERROR error;
 	struct FiniteStateMachineStruct {
 		int act;
@@ -210,6 +211,7 @@ typedef struct WikiParserParserStruct {
 #define parserList (((WikiParserParserPtr)parser)->list)
 #define parserMark(mark) (((WikiParserParserPtr)parser)->marker[MARKER_ ## mark])
 #define parserMarker (((WikiParserParserPtr)parser)->marker)
+#define parserParagraphCount (((WikiParserParserPtr)parser)->paragraphCount)
 #define parserStack (((WikiParserParserPtr)parser)->stack)
 #define parserTop (((WikiParserParserPtr)parser)->top)
 #define parserUserData (((WikiParserParserPtr)parser)->userData)
@@ -240,7 +242,7 @@ bool wikiParserTextParagraph(WikiParser parser);
 bool wikiParserToken(WikiParser parser, WikiParserToken *token);
 bool wikiParserTokenClose(WikiParser parser, int tokenType);
 bool wikiParserTokenCloseToggles(WikiParser parser);
-bool wikiParserTokenOpen(WikiParser parser, int tokenType);
+bool wikiParserTokenOpen(WikiParser parser, int tokenType, int value);
 bool wikiParserTokenToggle(WikiParser parser, int tokenType);
 bool wikiParserTokenToggle2(WikiParser parser, int topTokenType, int tailTokenType);
 
@@ -322,9 +324,9 @@ bool wikiParserTokenToggle2(WikiParser parser, int topTokenType, int tailTokenTy
 			} else {
 				if ((mode == 0) && !wikiParserCommitBlock(parser)) fbreak;
 				if (!wikiParserTokenOpen(parser, parserList[index - 1] ? WIKI_PARSER_TOKEN_TYPE_ORDEREDLIST : 
-						WIKI_PARSER_TOKEN_TYPE_UNORDEREDLIST)) fbreak;
+						WIKI_PARSER_TOKEN_TYPE_UNORDEREDLIST, 0)) fbreak;
 			}
-			if (!wikiParserTokenOpen(parser, WIKI_PARSER_TOKEN_TYPE_LISTITEM)) fbreak;
+			if (!wikiParserTokenOpen(parser, WIKI_PARSER_TOKEN_TYPE_LISTITEM, 0)) fbreak;
 			parserBlockMode = index << BLOCKMODE_SHIFT;
 		};
 
@@ -334,15 +336,15 @@ bool wikiParserTokenToggle2(WikiParser parser, int topTokenType, int tailTokenTy
 			bool header = (*(parserFSM.te - 1) == '=');
 			if ((parserBlockMode & BLOCKMODE_TABLE) == 0) {
 				if (!wikiParserCommitBlock(parser)) fbreak;
-				if (!wikiParserTokenOpen(parser, WIKI_PARSER_TOKEN_TYPE_TABLE)) fbreak;
+				if (!wikiParserTokenOpen(parser, WIKI_PARSER_TOKEN_TYPE_TABLE, header ? 1 : 0)) fbreak;
 			} else {
 				if (!wikiParserTokenClose(parser, WIKI_PARSER_TOKEN_TYPE_TABLEDATA)) fbreak;
 				if (!wikiParserTokenClose(parser, WIKI_PARSER_TOKEN_TYPE_TABLEHEADER)) fbreak;
 				if (!wikiParserTokenClose(parser, WIKI_PARSER_TOKEN_TYPE_TABLEROW)) fbreak;
 			}
-			if (!wikiParserTokenOpen(parser, WIKI_PARSER_TOKEN_TYPE_TABLEROW)) fbreak;
+			if (!wikiParserTokenOpen(parser, WIKI_PARSER_TOKEN_TYPE_TABLEROW, 0)) fbreak;
 			if (!wikiParserTokenOpen(parser, header ? WIKI_PARSER_TOKEN_TYPE_TABLEHEADER : 
-					WIKI_PARSER_TOKEN_TYPE_TABLEDATA)) fbreak;
+					WIKI_PARSER_TOKEN_TYPE_TABLEDATA, 0)) fbreak;
 			parserBlockMode = BLOCKMODE_TABLE;
 		};
 
@@ -356,7 +358,7 @@ bool wikiParserTokenToggle2(WikiParser parser, int topTokenType, int tailTokenTy
 			} else {
 				bool header = (*(parserFSM.ts + 1) == '=');
 				if (!wikiParserTokenOpen(parser, header ? WIKI_PARSER_TOKEN_TYPE_TABLEHEADER : 
-						WIKI_PARSER_TOKEN_TYPE_TABLEDATA)) fbreak;
+						WIKI_PARSER_TOKEN_TYPE_TABLEDATA, 0)) fbreak;
 			}
 		};
 
@@ -503,18 +505,18 @@ bool wikiParserTokenToggle2(WikiParser parser, int topTokenType, int tailTokenTy
 		( newline ';' ) when additions => { // definition list (item)
 			if ((parserBlockMode & BLOCKMODE_DTERM) == 0) {
 				if (!wikiParserCommitBlock(parser)) fbreak;
-				if (!wikiParserTokenOpen(parser, WIKI_PARSER_TOKEN_TYPE_DEFINITIONLIST)) fbreak;
+				if (!wikiParserTokenOpen(parser, WIKI_PARSER_TOKEN_TYPE_DEFINITIONLIST, 0)) fbreak;
 			} else {
 				if (!wikiParserTokenClose(parser, WIKI_PARSER_TOKEN_TYPE_DEFINITIONTERM)) fbreak;
 				if (!wikiParserTokenClose(parser, WIKI_PARSER_TOKEN_TYPE_DEFINITIONDESC)) fbreak;
 			}
-			if (!wikiParserTokenOpen(parser, WIKI_PARSER_TOKEN_TYPE_DEFINITIONTERM)) fbreak;
+			if (!wikiParserTokenOpen(parser, WIKI_PARSER_TOKEN_TYPE_DEFINITIONTERM, 0)) fbreak;
 			parserBlockMode = BLOCKMODE_DTERM; /* set/reset list */
 		};
 
 		( ':' ) when { parserConfig.additions && ((parserBlockMode & BLOCKMODE_DMASK) == BLOCKMODE_DTERM) } => { // definition list (definition)
 			if (!wikiParserTokenClose(parser, WIKI_PARSER_TOKEN_TYPE_DEFINITIONTERM)) fbreak;
-			if (!wikiParserTokenOpen(parser, WIKI_PARSER_TOKEN_TYPE_DEFINITIONDESC)) fbreak;
+			if (!wikiParserTokenOpen(parser, WIKI_PARSER_TOKEN_TYPE_DEFINITIONDESC, 0)) fbreak;
 			parserBlockMode |= BLOCKMODE_DDESC; /* have used up the colon */
 		};
 
@@ -580,6 +582,8 @@ bool wikiParserTokenToggle2(WikiParser parser, int topTokenType, int tailTokenTy
 }%%
 
 %% write data;
+
+#pragma unused (WikiParser_en_main)
 
 void wikiParserParserInit(WikiParser parser, int blockMode)
 {
@@ -662,7 +666,7 @@ bool wikiParserTextParagraph(WikiParser parser)
 	bool error = false;
 	if (parserBlockMode <= BLOCKMODE_PMODE) {
 		if (parserBlockMode == BLOCKMODE_OUTER) {
-			error = !wikiParserTokenOpen(parser, WIKI_PARSER_TOKEN_TYPE_PARAGRAPH);
+			error = !wikiParserTokenOpen(parser, WIKI_PARSER_TOKEN_TYPE_PARAGRAPH, ++(parserParagraphCount));
 		}
 		parserBlockMode = BLOCKMODE_INNER;
 	}
@@ -727,12 +731,13 @@ bool wikiParserTokenCloseToggles(WikiParser parser)
 	return !error;
 }
 
-bool wikiParserTokenOpen(WikiParser parser, int tokenType)
+bool wikiParserTokenOpen(WikiParser parser, int tokenType, int value)
 {
 	bool error = false;
 	WikiParserToken token = emptyWikiParserToken;
 	token.type = tokenType;
 	token.state = true;
+	token.value = value;
 	error = !wikiParserToken(parser, &token);
 	parserStack[parserTop++] = tokenType;
 	return !error;
@@ -798,6 +803,7 @@ WikiParser WIKIPARSERAPI createWikiParser(WikiParserConfig *config)
 		parserConfig = config ? *config : emptyWikiParserConfig;
 		parserCurrentLine = 0;
 		parserError = 0;
+		parserParagraphCount = 0;
 	}
 	return parser;
 }
