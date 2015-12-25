@@ -73,6 +73,8 @@ bool echoHeadingIndex(void *userData, int index)
 	write data;
 }%%
 
+#pragma unused (EscapeTextWriter_en_main,EscapeTextWriter_error)
+
 bool escapeTextWriter(void *userData, WikiParserBuffer *text)
 {
 	assert(text);
